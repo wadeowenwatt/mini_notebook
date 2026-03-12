@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftotext:*)",
+      "Bash(du:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(source:*)"
+    ]
+  }
+}

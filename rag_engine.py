@@ -1,10 +1,6 @@
 import os
-import nest_asyncio
 
-# Patch asyncio để LlamaIndex có thể gọi asyncio.run() bên trong FastAPI event loop
-nest_asyncio.apply()
-
-from llama_index.core import (  # noqa: E402
+from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
     Settings,
