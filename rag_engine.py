@@ -1,19 +1,15 @@
 import os
-import nest_asyncio
 
-# Patch asyncio để LlamaIndex có thể gọi asyncio.run() bên trong FastAPI event loop
-nest_asyncio.apply()
-
-from llama_index.core import (  # noqa: E402
+from llama_index.core import (
     VectorStoreIndex,
     SimpleDirectoryReader,
     Settings,
     StorageContext,
     load_index_from_storage,
 )
-from llama_index.llms.google_genai import GoogleGenAI  # noqa: E402
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # noqa: E402
-from dotenv import load_dotenv  # noqa: E402
+from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from dotenv import load_dotenv
 
 load_dotenv()
 

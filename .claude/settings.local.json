@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pdftotext:*)",
+      "Bash(du:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(source:*)",
+      "Bash(wc:*)",
+      "Bash(/tmp/quick_reference.txt:*)",
+      "Read(//tmp/**)"
+    ]
+  }
+}
