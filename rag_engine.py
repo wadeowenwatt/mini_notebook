@@ -5,16 +5,19 @@ from llama_index.core import (
     SimpleDirectoryReader,
     Settings,
     StorageContext,
-    load_index_from_storage,
 )
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from dotenv import load_dotenv
+from llama_index.vector_stores.chroma import ChromaVectorStore
+import chromadb
 
 load_dotenv()
 
-PERSIST_DIR = "./storage"
 DATA_DIR = "./data"
+CHROMA_HOST = os.getenv("CHROMA_HOST", "localhost")
+CHROMA_PORT = int(os.getenv("CHROMA_PORT", "8000"))
+CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "rag_documents")
 
 # ─── Configure Models ────────────────────────────────────────────────────────
 
@@ -26,35 +29,57 @@ Settings.embed_model = embed_model
 Settings.chunk_size = 512
 Settings.chunk_overlap = 50
 
+# ─── ChromaDB Client ─────────────────────────────────────────────────────────
+
+
+def _get_chroma_collection():
+    """Kết nối ChromaDB server và trả về collection."""
+    client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+    collection = client.get_or_create_collection(CHROMA_COLLECTION)
+    return client, collection
+
+
 # ─── Build or Load Index ─────────────────────────────────────────────────────
 
 
-def _build_index() -> VectorStoreIndex:
-    """Tạo index mới từ thư mục data/ và lưu vào storage/."""
-    print("[RAG] Chưa có dữ liệu embedding. Bắt đầu đọc PDF và tạo Vector...")
+def _build_index(collection) -> VectorStoreIndex:
+    """Đọc PDF từ data/ và đánh index vào ChromaDB collection."""
+    print("[RAG] Bắt đầu đọc PDF và tạo Vector vào ChromaDB...")
     if not os.path.exists(DATA_DIR) or not os.listdir(DATA_DIR):
         raise FileNotFoundError(
             f"Thư mục '{DATA_DIR}' không tồn tại hoặc rỗng. "
             "Hãy thêm file PDF vào thư mục này."
         )
     documents = SimpleDirectoryReader(DATA_DIR).load_data()
-    index = VectorStoreIndex.from_documents(documents)
-    index.storage_context.persist(persist_dir=PERSIST_DIR)
-    print("[RAG] Đã lưu embedding thành công!")
+    vector_store = ChromaVectorStore(chroma_collection=collection)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+    print("[RAG] Đã lưu embedding vào ChromaDB thành công!")
     return index
 
 
-def _load_index() -> VectorStoreIndex:
-    """Load index đã tồn tại từ storage/."""
-    print("[RAG] Phát hiện dữ liệu đã embedding, đang tải lên từ ổ cứng...")
-    storage_context = StorageContext.from_defaults(persist_dir=PERSIST_DIR)
-    index = load_index_from_storage(storage_context)
-    print("[RAG] Tải embedding thành công!")
+def _load_index(collection) -> VectorStoreIndex:
+    """Load index từ ChromaDB collection đã có dữ liệu."""
+    print("[RAG] Tải index từ ChromaDB...")
+    vector_store = ChromaVectorStore(chroma_collection=collection)
+    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    index = VectorStoreIndex.from_vector_store(
+        vector_store, storage_context=storage_context
+    )
+    print("[RAG] Tải index thành công!")
     return index
+
+
+def _init_index() -> VectorStoreIndex:
+    """Khởi tạo index: build mới nếu collection rỗng, ngược lại load từ ChromaDB."""
+    _client, collection = _get_chroma_collection()
+    if collection.count() == 0:
+        return _build_index(collection)
+    return _load_index(collection)
 
 
 # Khởi tạo index và query engine khi module được import
-_index = _load_index() if os.path.exists(PERSIST_DIR) else _build_index()
+_index = _init_index()
 _query_engine = _index.as_query_engine()
 
 # ─── Public API ──────────────────────────────────────────────────────────────
