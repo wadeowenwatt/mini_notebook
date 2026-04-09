@@ -1,0 +1,44 @@
+services:
+  chroma:
+    image: chromadb/chroma:latest
+    restart: unless-stopped
+    volumes:
+      # Persistent storage: dữ liệu ChromaDB sẽ không mất khi restart container
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - rag_net
+    # Port 8000 KHÔNG expose ra host machine — chỉ accessible trong internal network rag_net
+    # Để debug local, uncomment dòng dưới (KHÔNG dùng trên production):
+    # ports:
+    #   - "127.0.0.1:8000:8000"
+
+  bot:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - chroma
+    volumes:
+      # Mount thư mục data/ để thêm PDF mà không cần rebuild image
+      - ./data:/app/data:ro
+      # Cache HuggingFace model để không re-download khi restart container
+      - hf_cache:/root/.cache/huggingface
+    env_file:
+      - .env
+    environment:
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - CHROMA_COLLECTION=${CHROMA_COLLECTION:-rag_documents}
+      - BOT_TYPE=${BOT_TYPE:-discord}
+    networks:
+      - rag_net
+
+networks:
+  rag_net:
+    driver: bridge
+
+volumes:
+  chroma_data:
+  hf_cache:
