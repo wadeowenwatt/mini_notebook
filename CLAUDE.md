@@ -18,9 +18,11 @@ A RAG (Retrieval-Augmented Generation) chatbot that answers questions about PDF 
 
 ```
 mini_notebook/
-├── main.py            # Entry point — starts the Discord bot
-├── rag_engine.py      # RAG pipeline: PDF ingestion, embedding, vector search, LLM query
-├── discord_bot.py     # Discord event handlers, !ask command, async bridge
+├── src/
+│   ├── main.py            # Entry point — starts the Discord bot
+│   ├── rag_engine.py      # RAG pipeline: PDF ingestion, embedding, vector search, LLM query
+│   ├── discord_bot.py     # Discord event handlers, !ask command, async bridge
+│   └── telegram_bot.py    # Telegram event handlers
 ├── data/              # Place PDF files here (input documents)
 ├── storage/           # Auto-generated vector index cache (JSON files)
 ├── requirements.txt   # Pinned dependencies (pip freeze output)
@@ -36,13 +38,13 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Run
-python main.py
+python src/main.py
 
 # Quick RAG test (no Discord needed)
-python -c "import rag_engine; print(rag_engine.query('What is this document about?'))"
+python -c "import sys; sys.path.insert(0, 'src'); import rag_engine; print(rag_engine.query('What is this document about?'))"
 
 # Re-index after changing PDFs
-rm -rf storage/ && python main.py
+rm -rf storage/ && python src/main.py
 ```
 
 ## Environment Variables
@@ -57,16 +59,16 @@ Defined in `.env` (gitignored). Required keys:
 
 ## Key File Responsibilities
 
-| File                             | Lines | What it does                                                                                                         |
-| -------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------- |
-| [rag_engine.py](rag_engine.py)   | 78    | Configures LLM + embeddings (`Settings` global), builds/loads vector index, exposes `query()` API                    |
-| [discord_bot.py](discord_bot.py) | 116   | Async Discord bot with `on_message` handler + `!ask` prefix command, bridges sync RAG calls via `ThreadPoolExecutor` |
-| [main.py](main.py)               | 5     | Thin entry point calling `discord_bot.run()`                                                                         |
+| File                                     | Lines | What it does                                                                                                         |
+| ---------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------- |
+| [src/rag_engine.py](src/rag_engine.py)   | 78    | Configures LLM + embeddings (`Settings` global), builds/loads vector index, exposes `query()` API                    |
+| [src/discord_bot.py](src/discord_bot.py) | 116   | Async Discord bot with `on_message` handler + `!ask` prefix command, bridges sync RAG calls via `ThreadPoolExecutor` |
+| [src/main.py](src/main.py)               | 5     | Thin entry point calling `discord_bot.run()`                                                                         |
 
 ## Important Behaviors
 
-- **Index auto-build:** On first run (no `storage/` dir), `rag_engine` reads all PDFs from `data/` and persists the index. Subsequent runs load from `storage/` instantly. See [rag_engine.py:57](rag_engine.py#L57).
-- **Module-level initialization:** The vector index and query engine are created at **import time** as module globals. See [rag_engine.py:56-58](rag_engine.py#L56-L58).
+- **Index auto-build:** On first run (no `storage/` dir), `rag_engine` reads all PDFs from `data/` and persists the index. Subsequent runs load from `storage/` instantly. See [src/rag_engine.py:57](src/rag_engine.py#L57).
+- **Module-level initialization:** The vector index and query engine are created at **import time** as module globals. See [src/rag_engine.py:56-58](src/rag_engine.py#L56-L58).
 - **Re-indexing:** Delete `storage/` and restart. There is no incremental update mechanism.
 
 ## Additional Documentation
