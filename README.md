@@ -121,9 +121,9 @@ storage volume: chroma_data    survives container restarts
 
 | File | Lines | Role |
 |---|---|---|
-| [main.py](main.py) | 25 | Entry point — reads `BOT_TYPE` env var, starts Discord or Telegram bot |
-| [rag_engine.py](rag_engine.py) | ~85 | Configures models, connects ChromaDB, builds/loads index, exposes `query()` |
-| [discord_bot.py](discord_bot.py) | 116 | Discord event handlers, `!ask` command, async bridge via `ThreadPoolExecutor` |
+| [src/main.py](src/main.py) | 25 | Entry point — reads `BOT_TYPE` env var, starts Discord or Telegram bot |
+| [src/rag_engine.py](src/rag_engine.py) | ~85 | Configures models, connects ChromaDB, builds/loads index, exposes `query()` |
+| [src/discord_bot.py](src/discord_bot.py) | 116 | Discord event handlers, `!ask` command, async bridge via `ThreadPoolExecutor` |
 | [docker-compose.yml](docker-compose.yml) | — | Defines `chroma` + `bot` services, volumes, internal network |
 | [Dockerfile](Dockerfile) | — | Builds the `bot` container image |
 | `data/` | — | Drop your PDF files here (bind-mounted read-only into container) |
@@ -146,7 +146,7 @@ cp .env.example .env   # or create manually — see Environment Variables below
 cp your_document.pdf data/
 
 # 5. Run (requires a local or remote ChromaDB instance)
-python main.py
+python src/main.py
 ```
 
 For a full **Docker-based deployment** (recommended for production), see [GUIDE_DEPLOY.md](GUIDE_DEPLOY.md).
