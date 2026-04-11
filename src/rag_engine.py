@@ -35,6 +35,9 @@ Settings.chunk_overlap = 50
 def _get_chroma_collection():
     """Kết nối ChromaDB server và trả về collection."""
     client = chromadb.HttpClient(host=CHROMA_HOST, port=CHROMA_PORT)
+    """Tạo hoặc kết nối ChromaDB local và trả về collection."""
+    # Dùng PersistentClient để lưu vector DB ngay trong thư mục project thay vì kết nối server ngoài
+    # client = chromadb.PersistentClient(path="./chroma_db")
     collection = client.get_or_create_collection(CHROMA_COLLECTION)
     return client, collection
 
